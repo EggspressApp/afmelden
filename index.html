@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Afmelden — Eggspress</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#FAF6EE;color:#241C14;margin:0;padding:60px 20px;text-align:center;}
+  .card{max-width:420px;margin:0 auto;background:#fff;border:1px solid #EAE1CF;border-radius:16px;padding:36px 28px;}
+  img.logo{height:24px;width:auto;margin-bottom:22px;}
+  h1{font-size:18px;margin:0 0 12px;}
+  p{font-size:14px;color:#8C7F6B;line-height:1.6;margin:0 0 20px;}
+  a.btn{display:inline-block;background:#E0281C;color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <img class="logo" src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
+  <div id="inhoud"><h1>Bezig...</h1><p>Een moment geduld.</p></div>
+</div>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const actie = params.get('actie') || 'uit';
+  const inhoud = document.getElementById('inhoud');
+
+  if (!id) {
+    inhoud.innerHTML = '<h1>Ongeldige link</h1><p>Er ontbreekt een ID in deze link.</p>';
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://ckpxdkodiaxpsfmackat.supabase.co/functions/v1/afmelden-tijdvak?id=${encodeURIComponent(id)}&actie=${encodeURIComponent(actie)}`, {
+      headers: { 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0' }
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      inhoud.innerHTML = `<h1>Er ging iets mis</h1><p>${data.fout || 'Probeer het later nog eens.'}</p>`;
+      return;
+    }
+
+    const naam = data.naam || '';
+    if (data.uit) {
+      const heraanmeldLink = `${window.location.pathname}?id=${encodeURIComponent(id)}&actie=aan`;
+      inhoud.innerHTML = `<h1>Afgemeld</h1><p>${naam ? naam + ', j' : 'J'}e ontvangt geen bezorgtijd-mails meer. Je krijgt je dozen gewoon zoals altijd — je hoort er alleen niet meer vooraf een tijdvak van.</p><a class="btn" href="${heraanmeldLink}">Toch weer aanmelden</a>`;
+    } else {
+      inhoud.innerHTML = `<h1>Weer aangemeld</h1><p>${naam ? naam + ', j' : 'J'}e ontvangt vanaf nu weer een bezorgtijd-mail op maandag.</p>`;
+    }
+  } catch (e) {
+    inhoud.innerHTML = '<h1>Er ging iets mis</h1><p>Probeer het later nog eens, of neem contact op met Eggspress.</p>';
+  }
+})();
+</script>
+</body>
+</html>
