@@ -1,0 +1,15 @@
+{
+  "name": "Eggspress — weekoverzicht",
+  "short_name": "Eggspress week",
+  "start_url": "./?t=bee6c8df5e0bf5bc42a47e6bd1243626f9ad53266f0c169f",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF6EE",
+  "theme_color": "#E0281C",
+  "icons": [
+    { "src": "icon.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

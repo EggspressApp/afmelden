@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Eggspress — weekoverzicht</title>
+<meta name="theme-color" content="#E0281C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Eggspress week">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --ground:#FAF6EE; --surface:#FFFFFF; --border:#EAE1CF; --ink:#241C14; --muted:#8C7F6B;
+    --accent:#E0281C; --accent-soft:#FDF0D5; --up:#4B7A51; --down:#A45A3B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    padding-top:env(safe-area-inset-top); padding-bottom:calc(env(safe-area-inset-bottom) + 20px);
+    min-height:100vh;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 14px;}
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 16px 11px; border-bottom:1px solid var(--border); background:var(--surface);
+  }
+  header .brand{display:flex; align-items:center; gap:9px;}
+  header .brand img{height:16px; width:auto; display:block;}
+  header .brand .weeklabel{font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);}
+  #refreshBtn{
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-size:16px; line-height:1; cursor:pointer; padding:0;
+  }
+  #refreshBtn:active{background:var(--accent-soft); color:var(--accent); transform:scale(0.94);}
+  #refreshBtn.spin svg{animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  main{padding:13px 0 6px;}
+  .updated{font-size:10.5px; color:var(--muted); text-align:center; margin:2px 0 13px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:13px;
+    padding:15px 16px 17px; margin-bottom:11px;
+  }
+  .eyebrow{font-family:Arial,sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-bottom:7px;}
+  .hero{background:var(--accent-soft); border:1.5px dashed var(--border); text-align:center; padding:18px 16px 20px;}
+  .hero .num{font-weight:900; font-size:33px; letter-spacing:-0.02em; line-height:1; font-variant-numeric:tabular-nums;}
+  .delta{display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:700; margin-top:9px; padding:3px 9px; border-radius:20px;}
+  .delta.up{color:var(--up); background:rgba(75,122,81,.1);}
+  .delta.down{color:var(--down); background:rgba(164,90,59,.1);}
+  .delta.flat{color:var(--muted); background:rgba(140,127,107,.1);}
+
+  .tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:11px;}
+  .tile{background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:14px;}
+  .tile .num{font-weight:900; font-size:21px; letter-spacing:-0.01em; font-variant-numeric:tabular-nums;}
+  .tile .label{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .tile .delta{margin-top:7px;}
+
+  .maat-row{display:flex; align-items:center; gap:9px; margin-top:10px;}
+  .maat-row:first-of-type{margin-top:1px;}
+  .maat-label{width:30px; flex-shrink:0; font-size:12px; font-weight:700; color:var(--ink);}
+  .maat-track{flex:1; height:9px; background:var(--accent-soft); border-radius:6px; overflow:hidden;}
+  .maat-fill{height:100%; background:var(--accent); border-radius:6px; min-width:3px;}
+  .maat-count{width:34px; flex-shrink:0; text-align:right; font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink);}
+
+  .route-svg{width:100%; height:auto; display:block; margin-top:2px;}
+  .route-list{list-style:none; margin:12px 0 0; padding:0; counter-reset:stop;}
+  .route-list li{
+    counter-increment:stop; display:flex; align-items:center; gap:9px;
+    padding:6px 0; border-bottom:1px solid var(--border); font-size:12.5px;
+  }
+  .route-list li:last-child{border-bottom:none;}
+  .route-list li::before{
+    content:counter(stop); flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:10.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .route-list li .naam{flex:1; color:var(--ink); font-weight:600;}
+  .route-list li .dozen{color:var(--muted); font-variant-numeric:tabular-nums;}
+
+  .empty{text-align:center; color:var(--muted); font-size:13px; padding:18px 0;}
+  .foot{text-align:center; font-size:10.5px; color:var(--muted); margin-top:6px; padding:0 24px; line-height:1.6;}
+
+  .skeleton{background:linear-gradient(90deg,var(--border) 25%, #F3ECDC 37%, var(--border) 63%); background-size:400% 100%; animation:shimmer 1.4s ease infinite; border-radius:8px;}
+  @keyframes shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
+  #errorBox{display:none; text-align:center; padding:40px 20px;}
+  #errorBox button{
+    margin-top:14px; background:var(--accent); color:#fff; border:none; border-radius:10px;
+    padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <img src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
+    <span class="weeklabel" id="weekLabel">Week —</span>
+  </div>
+  <button id="refreshBtn" aria-label="Vernieuwen">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  </button>
+</header>
+
+<div class="wrap">
+  <div class="updated" id="updatedLabel">&nbsp;</div>
+
+  <main id="content">
+    <div class="card hero"><div class="skeleton" style="height:52px;width:70%;margin:0 auto;"></div></div>
+    <div class="tiles">
+      <div class="tile"><div class="skeleton" style="height:40px;"></div></div>
+      <div class="tile"><div class="skeleton" style="height:40px;"></div></div>
+    </div>
+    <div class="card"><div class="skeleton" style="height:120px;"></div></div>
+  </main>
+
+  <div id="errorBox">
+    <div style="font-size:32px;">🥚</div>
+    <p style="font-size:14px;color:var(--muted);margin:10px 0 0;">Kon de weekcijfers niet ophalen.</p>
+    <button id="retryBtn">Opnieuw proberen</button>
+  </div>
+
+  <div class="foot">Eggspress &middot; alleen zichtbaar voor jou &middot; niet delen met verkopers</div>
+</div>
+
+<script>
+(function(){
+  var API = 'https://ckpxdkodiaxpsfmackat.supabase.co/functions/v1/week-widget-data';
+  var STORAGE_KEY = 'eggspress_week_token';
+
+  function getToken(){
+    var fromUrl = new URLSearchParams(location.search).get('t');
+    if (fromUrl) { try { localStorage.setItem(STORAGE_KEY, fromUrl); } catch(e){} return fromUrl; }
+    try { return localStorage.getItem(STORAGE_KEY); } catch(e){ return null; }
+  }
+
+  var EUR = new Intl.NumberFormat('nl-NL', { style:'currency', currency:'EUR' });
+  var GETAL = new Intl.NumberFormat('nl-NL');
+
+  function deltaHtml(huidig, vorig, opts){
+    opts = opts || {};
+    if (!vorig) return '';
+    var verschil = huidig - vorig;
+    if (Math.abs(verschil) < (opts.epsilon || 0.005)) {
+      return '<span class="delta flat">— gelijk aan vorige week</span>';
+    }
+    var pct = vorig !== 0 ? Math.round((verschil / vorig) * 100) : null;
+    var richting = verschil > 0 ? 'up' : 'down';
+    var pijl = verschil > 0 ? '▲' : '▼';
+    var pctTekst = pct !== null ? ' (' + (verschil > 0 ? '+' : '') + pct + '%)' : '';
+    return '<span class="delta ' + richting + '">' + pijl + ' t.o.v. vorige week' + pctTekst + '</span>';
+  }
+
+  function maatRij(label, aantal, max){
+    var pct = max > 0 ? Math.max((aantal / max) * 100, aantal > 0 ? 4 : 0) : 0;
+    return '<div class="maat-row">' +
+      '<div class="maat-label">' + label + '</div>' +
+      '<div class="maat-track"><div class="maat-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="maat-count">' + GETAL.format(aantal) + '</div>' +
+    '</div>';
+  }
+
+  function bouwRouteSvg(stops){
+    if (!stops.length) return '';
+    var lats = stops.map(function(p){return p.lat;});
+    var lons = stops.map(function(p){return p.lon;});
+    var minLat = Math.min.apply(null, lats), maxLat = Math.max.apply(null, lats);
+    var minLon = Math.min.apply(null, lons), maxLon = Math.max.apply(null, lons);
+    var W = 320, H = 200, PAD = 26;
+    var spanLat = Math.max(maxLat - minLat, 0.001), spanLon = Math.max(maxLon - minLon, 0.001);
+    function xy(p){
+      var x = PAD + ((p.lon - minLon) / spanLon) * (W - PAD * 2);
+      var y = PAD + (1 - (p.lat - minLat) / spanLat) * (H - PAD * 2);
+      return [x, y];
+    }
+    var coords = stops.map(xy);
+    var lijn = coords.map(function(c){ return c[0].toFixed(1) + ',' + c[1].toFixed(1); }).join(' ');
+    var svg = '<svg class="route-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">';
+    svg += '<polyline points="' + lijn + '" fill="none" stroke="#E0281C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" stroke-dasharray="1,7"/>';
+    for (var i = 0; i < coords.length; i++){
+      var c = coords[i];
+      svg += '<circle cx="' + c[0].toFixed(1) + '" cy="' + c[1].toFixed(1) + '" r="9" fill="#E0281C"/>';
+      svg += '<text x="' + c[0].toFixed(1) + '" y="' + (c[1]+3.2).toFixed(1) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="#FAF6EE" font-family="Arial,sans-serif">' + (i+1) + '</text>';
+    }
+    svg += '</svg>';
+    return svg;
+  }
+
+  function render(data){
+    var h = data.huidig, v = data.vorig;
+    document.getElementById('weekLabel').textContent = 'Week ' + h.week + ' · ' + h.jaar;
+    var bijgewerkt = new Date(data.bijgewerktOp);
+    document.getElementById('updatedLabel').textContent = 'Bijgewerkt om ' + bijgewerkt.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit'});
+
+    var maxMaat = Math.max(h.maten.m, h.maten.l, h.maten.xl, h.maten.bio, 1);
+
+    var html = '';
+
+    html += '<div class="card hero">' +
+      '<div class="eyebrow">Omzet deze week</div>' +
+      '<div class="num">' + EUR.format(h.omzet) + '</div>' +
+      deltaHtml(h.omzet, v.omzet) +
+    '</div>';
+
+    html += '<div class="tiles">' +
+      '<div class="tile"><div class="num">' + GETAL.format(h.bestellingenAantal) + '</div><div class="label">Bestellingen</div>' + deltaHtml(h.bestellingenAantal, v.bestellingenAantal) + '</div>' +
+      '<div class="tile"><div class="num">' + GETAL.format(h.dozenTotaal) + '</div><div class="label">Dozen totaal</div>' + deltaHtml(h.dozenTotaal, v.dozenTotaal) + '</div>' +
+    '</div>';
+
+    html += '<div class="card">' +
+      '<div class="eyebrow">Maatverdeling</div>' +
+      maatRij('M', h.maten.m, maxMaat) +
+      maatRij('L', h.maten.l, maxMaat) +
+      maatRij('XL', h.maten.xl, maxMaat) +
+      maatRij('Bio', h.maten.bio, maxMaat) +
+    '</div>';
+
+    html += '<div class="card">' +
+      '<div class="eyebrow">Routevolgorde vandaag</div>';
+    if (h.stops.length) {
+      html += bouwRouteSvg(h.stops);
+      html += '<ul class="route-list">' + h.stops.map(function(s, i){
+        return '<li><span class="naam">' + s.naam + '</span><span class="dozen">' + s.dozen + ' dozen</span></li>';
+      }).join('') + '</ul>';
+    } else {
+      html += '<div class="empty">Nog geen bestellingen met adres deze week.</div>';
+    }
+    html += '</div>';
+
+    document.getElementById('content').innerHTML = html;
+    document.getElementById('content').style.display = '';
+    document.getElementById('errorBox').style.display = 'none';
+  }
+
+  function toonFout(){
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('content').style.display = 'none';
+  }
+
+  function laad(){
+    var token = getToken();
+    var btn = document.getElementById('refreshBtn');
+    btn.classList.add('spin');
+    if (!token) { toonFout(); btn.classList.remove('spin'); return; }
+    fetch(API + '?t=' + encodeURIComponent(token))
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        btn.classList.remove('spin');
+        if (!data.success) { toonFout(); return; }
+        render(data);
+      })
+      .catch(function(){ btn.classList.remove('spin'); toonFout(); });
+  }
+
+  document.getElementById('refreshBtn').addEventListener('click', laad);
+  document.getElementById('retryBtn').addEventListener('click', laad);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) laad(); });
+
+  laad();
+})();
+</script>
+</body>
+</html>
