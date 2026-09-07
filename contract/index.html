@@ -5,25 +5,40 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Contract ondertekenen — Eggspress</title>
 <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#FAF6EE;color:#241C14;margin:0;padding:40px 16px;}
-  .card{max-width:640px;margin:0 auto;background:#fff;border:1px solid #EAE1CF;border-radius:16px;padding:32px 28px;}
-  img.logo{height:24px;width:auto;margin-bottom:22px;display:block;}
-  h1{font-size:19px;margin:0 0 6px;}
-  p{font-size:14px;color:#8C7F6B;line-height:1.6;margin:0 0 16px;}
-  .tekst{white-space:pre-wrap;font-size:12.5px;line-height:1.6;background:#FAF6EE;border:1px solid #EAE1CF;border-radius:10px;padding:16px;max-height:420px;overflow-y:auto;margin-bottom:20px;color:#241C14;}
-  label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#8C7F6B;margin:14px 0 4px;}
-  input[type=text]{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #EAE1CF;border-radius:8px;font-size:14px;font-family:inherit;}
-  .akkoord{display:flex;align-items:flex-start;gap:8px;margin-top:18px;font-size:12.5px;color:#241C14;line-height:1.5}
-  .akkoord input{margin-top:3px}
-  button{margin-top:20px;width:100%;background:#E0281C;color:#fff;border:none;font-weight:700;font-size:14px;padding:13px 20px;border-radius:8px;cursor:pointer}
+  :root{ --rood:#E0281C; --crème:#FAF6EE; --rand:#EAE1CF; --tekst:#241C14; --muted:#8C7F6B; }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--crème);color:var(--tekst);margin:0;padding:28px 14px 60px;}
+  .kaart{max-width:600px;margin:0 auto;background:#fff;border:1px solid var(--rand);border-radius:16px;overflow:hidden;box-shadow:0 2px 18px rgba(36,28,20,.05)}
+  .kop{background:var(--rood);padding:26px 26px 22px;text-align:center}
+  .kop img{height:26px;width:auto;background:#fff;padding:8px 16px;border-radius:8px;display:inline-block;margin-bottom:14px}
+  .kop .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:4px}
+  .kop h1{font-size:20px;color:#fff;margin:0;font-weight:800}
+  .lijf{padding:26px}
+  .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 20px}
+  .doc{background:var(--crème);border:1px solid var(--rand);border-radius:12px;padding:6px 18px;max-height:440px;overflow-y:auto;margin-bottom:22px}
+  .doc .par{font-size:12.5px;line-height:1.7;margin:14px 0;white-space:pre-wrap}
+  .doc .kop-sectie{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-weight:800;font-size:13.5px;color:var(--rood);margin:22px 0 6px;padding-top:14px;border-top:1px solid var(--rand)}
+  .doc .kop-sectie:first-child{border-top:none;margin-top:14px;padding-top:0}
+  .doc .titelregel{font-weight:800;font-size:15px;margin:6px 0 14px}
+  label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 5px}
+  input[type=text]{width:100%;padding:11px 13px;border:1px solid var(--rand);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+  input[type=text]:focus{outline:2px solid var(--rood);outline-offset:-1px}
+  .akkoord{display:flex;align-items:flex-start;gap:9px;margin-top:20px;font-size:12.5px;color:var(--tekst);line-height:1.5;background:var(--crème);border:1px solid var(--rand);border-radius:10px;padding:12px 14px}
+  .akkoord input{margin-top:3px;flex-shrink:0}
+  button{margin-top:20px;width:100%;background:var(--rood);color:#fff;border:none;font-weight:700;font-size:15px;padding:15px 20px;border-radius:10px;cursor:pointer}
   button:disabled{background:#D9CFC0;cursor:not-allowed}
-  .fout{color:#B3261E;font-size:13px;margin-top:10px}
+  .fout{color:#B3261E;font-size:13px;margin-top:12px}
+  .voettekst{text-align:center;font-size:10.5px;color:var(--muted);margin-top:16px}
 </style>
 </head>
 <body>
-<div class="card">
-  <img class="logo" src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
-  <div id="inhoud"><h1>Bezig...</h1><p>Een moment geduld.</p></div>
+<div class="kaart">
+  <div class="kop">
+    <img src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
+    <div class="eyebrow" id="kop-eyebrow">Overeenkomst wederverkoop</div>
+    <h1 id="kop-titel">Bezig...</h1>
+  </div>
+  <div class="lijf" id="inhoud"><p class="intro">Een moment geduld.</p></div>
 </div>
 <script>
 const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
@@ -45,6 +60,29 @@ function vulSjabloonIn(sjabloon, rij, adres){
     .replaceAll('{{prijslijst}}', renderPrijslijst(rij.prijslijst_snapshot));
 }
 
+// Zet de platte contracttekst om in lichte, leesbare HTML — herkent sectiekoppen ("3.
+// Werkwijze", "BIJLAGE 1 – PRIJSLIJST") aan hun vorm (kort, geen punt aan het einde) en
+// stijlt die apart; de rest blijft gewoon doorlopende tekst met behouden regelafbrekingen.
+function contractHtml(tekst){
+  const regels = tekst.split('\n');
+  const blokken = [];
+  let huidig = [];
+  const flush = () => { if (huidig.length) { blokken.push({ soort:'par', tekst: huidig.join('\n').trim() }); huidig = []; } };
+  const isSectiekop = (r) => /^\d{1,2}\.\s+[^.]{2,60}$/.test(r.trim()) || /^BIJLAGE\s/i.test(r.trim());
+  const isTitel = (i) => i === 0;
+  regels.forEach((r, i) => {
+    if (isTitel(i)) { flush(); blokken.push({ soort:'titel', tekst: r.trim() }); return; }
+    if (isSectiekop(r)) { flush(); blokken.push({ soort:'kop', tekst: r.trim() }); return; }
+    huidig.push(r);
+  });
+  flush();
+  return blokken.filter(b => b.tekst).map(b => {
+    if (b.soort === 'titel') return `<div class="titelregel">${esc(b.tekst)}</div>`;
+    if (b.soort === 'kop') return `<div class="kop-sectie">${esc(b.tekst)}</div>`;
+    return `<div class="par">${esc(b.tekst)}</div>`;
+  }).join('');
+}
+
 async function sbGet(pad){
   const res = await fetch(`${SB_URL}/rest/v1/${pad}`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
   return res.json();
@@ -52,28 +90,33 @@ async function sbGet(pad){
 
 (async () => {
   const inhoud = document.getElementById('inhoud');
+  const kopTitel = document.getElementById('kop-titel');
+  const kopEyebrow = document.getElementById('kop-eyebrow');
   const token = new URLSearchParams(window.location.search).get('token');
-  if (!token) { inhoud.innerHTML = '<h1>Ongeldige link</h1><p>Er ontbreekt een token in deze link.</p>'; return; }
+  if (!token) { kopTitel.textContent = 'Ongeldige link'; inhoud.innerHTML = '<p class="intro">Er ontbreekt een token in deze link.</p>'; return; }
 
   let rij;
   try {
     const rijen = await sbGet(`contract_ondertekeningen?token=eq.${encodeURIComponent(token)}&select=*`);
     rij = rijen[0];
-  } catch (e) { inhoud.innerHTML = '<h1>Er ging iets mis</h1><p>Probeer het later nog eens.</p>'; return; }
-  if (!rij) { inhoud.innerHTML = '<h1>Niet gevonden</h1><p>Deze link is niet (meer) geldig.</p>'; return; }
+  } catch (e) { kopTitel.textContent = 'Er ging iets mis'; inhoud.innerHTML = '<p class="intro">Probeer het later nog eens.</p>'; return; }
+  if (!rij) { kopTitel.textContent = 'Niet gevonden'; inhoud.innerHTML = '<p class="intro">Deze link is niet (meer) geldig.</p>'; return; }
 
   if (rij.status === 'compleet') {
-    inhoud.innerHTML = `<h1>Al helemaal getekend ✓</h1><p>Dit contract is compleet — er hoeft niets meer te gebeuren. Otto neemt het van hier over.</p>`;
+    kopTitel.textContent = 'Al helemaal getekend ✓';
+    inhoud.innerHTML = `<p class="intro">Dit contract is compleet — er hoeft niets meer te gebeuren. Otto neemt het van hier over.</p>`;
     return;
   }
   if (rij.status === 'geannuleerd') {
-    inhoud.innerHTML = `<h1>Niet meer geldig</h1><p>Deze contractlink is geannuleerd. Neem contact op met Eggspress als dit niet klopt.</p>`;
+    kopTitel.textContent = 'Niet meer geldig';
+    inhoud.innerHTML = `<p class="intro">Deze contractlink is geannuleerd. Neem contact op met Eggspress als dit niet klopt.</p>`;
     return;
   }
 
   const rol = rij.status === 'verkoper_getekend' ? 'ouder' : 'verkoper';
   if (rol === 'ouder' && rij.versie !== 'minderjarig') {
-    inhoud.innerHTML = `<h1>Er ging iets mis</h1><p>Deze link verwacht geen ouder-handtekening. Neem contact op met Eggspress.</p>`;
+    kopTitel.textContent = 'Er ging iets mis';
+    inhoud.innerHTML = `<p class="intro">Deze link verwacht geen ouder-handtekening. Neem contact op met Eggspress.</p>`;
     return;
   }
 
@@ -82,25 +125,25 @@ async function sbGet(pad){
   const sjabloon = sjabloonRij[0]?.waarde || '';
 
   const heeftAdresVeld = rol === 'verkoper' && !rij.adres;
-  const tekstHtml = esc(vulSjabloonIn(sjabloon, rij, rij.adres));
+  kopEyebrow.textContent = rol === 'verkoper' ? 'Overeenkomst wederverkoop' : 'Toestemming ouder / verzorger';
+  kopTitel.textContent = rol === 'verkoper' ? rij.naam : `Voor ${rij.naam}`;
 
-  const titel = rol === 'verkoper' ? `Contract voor ${esc(rij.naam)}` : `Toestemming ouder/verzorger — ${esc(rij.naam)}`;
   const uitleg = rol === 'verkoper'
     ? 'Lees het contract hieronder door. Vul je adres in (nodig om het contract compleet te maken) en teken door je naam te typen.'
     : `${esc(rij.naam)} heeft dit contract al getekend. Omdat ${esc(rij.naam)} minderjarig is, is ook uw toestemming als ouder/verzorger nodig — lees het contract hieronder door.`;
 
   inhoud.innerHTML = `
-    <h1>${titel}</h1>
-    <p>${uitleg}</p>
-    <div class="tekst" id="contract-tekst">${tekstHtml}</div>
+    <p class="intro">${uitleg}</p>
+    <div class="doc" id="contract-tekst">${contractHtml(vulSjabloonIn(sjabloon, rij, rij.adres))}</div>
     ${heeftAdresVeld ? `<label for="in-adres">Jouw adres (straat, postcode, plaats)</label><input type="text" id="in-adres" placeholder="Hoofdstraat 1, 7311 AB Apeldoorn">` : ''}
     <label for="in-naam">Volledige naam${rol === 'ouder' ? ' (ouder/verzorger)' : ''}</label>
     <input type="text" id="in-naam" placeholder="Voor- en achternaam">
     <label for="in-plaats">Plaats</label>
     <input type="text" id="in-plaats" placeholder="Bijv. Apeldoorn">
-    <div class="akkoord"><input type="checkbox" id="in-akkoord"><label style="all:unset;font-size:12.5px;color:#241C14" for="in-akkoord">Ik heb het contract hierboven gelezen en ga akkoord. Deze getypte naam geldt als mijn handtekening.</label></div>
-    <button id="btn-tekenen">Onderteken</button>
+    <div class="akkoord"><input type="checkbox" id="in-akkoord"><label style="all:unset;font-size:12.5px;color:var(--tekst)" for="in-akkoord">Ik heb het contract hierboven gelezen en ga akkoord. Deze getypte naam geldt als mijn handtekening.</label></div>
+    <button id="btn-tekenen">✍️ Onderteken</button>
     <div class="fout" id="fout" style="display:none"></div>
+    <div class="voettekst">Je handtekening wordt vastgelegd met tijdstip en IP-adres als bewijs van ondertekening.</div>
   `;
 
   document.getElementById('btn-tekenen').addEventListener('click', async () => {
@@ -126,13 +169,14 @@ async function sbGet(pad){
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.fout || 'onbekende fout');
+      kopTitel.textContent = 'Getekend ✓';
       if (data.status === 'verkoper_getekend') {
-        inhoud.innerHTML = `<h1>Getekend ✓</h1><p>Bedankt! Omdat je minderjarig bent, hebben we ook een handtekening van je ouder/verzorger nodig. We hebben hen zojuist een e-mail gestuurd.</p>`;
+        inhoud.innerHTML = `<p class="intro">Bedankt! Omdat je minderjarig bent, hebben we ook een handtekening van je ouder/verzorger nodig. We hebben hen zojuist een e-mail gestuurd.</p>`;
       } else {
-        inhoud.innerHTML = `<h1>Getekend ✓</h1><p>Bedankt! Het contract is compleet. Otto neemt het van hier over — je hoort snel meer.</p>`;
+        inhoud.innerHTML = `<p class="intro">Bedankt! Het contract is compleet. Otto neemt het van hier over — je hoort snel meer.</p>`;
       }
     } catch (e) {
-      btn.disabled = false; btn.textContent = 'Onderteken';
+      btn.disabled = false; btn.textContent = '✍️ Onderteken';
       foutEl.textContent = 'Ondertekenen mislukt: ' + e.message;
       foutEl.style.display = '';
     }
