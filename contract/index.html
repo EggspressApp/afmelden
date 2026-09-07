@@ -68,7 +68,7 @@ function contractHtml(tekst){
   const blokken = [];
   let huidig = [];
   const flush = () => { if (huidig.length) { blokken.push({ soort:'par', tekst: huidig.join('\n').trim() }); huidig = []; } };
-  const isSectiekop = (r) => /^\d{1,2}\.\s+[^.]{2,60}$/.test(r.trim()) || /^BIJLAGE\s/i.test(r.trim());
+  const isSectiekop = (r) => /^\d{1,2}\.\s+[^.]{2,60}$/.test(r.trim()) || /^BIJLAGE\s/i.test(r.trim()) || /^In aanmerking nemende dat:?$/i.test(r.trim());
   const isTitel = (i) => i === 0;
   regels.forEach((r, i) => {
     if (isTitel(i)) { flush(); blokken.push({ soort:'titel', tekst: r.trim() }); return; }
