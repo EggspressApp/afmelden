@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contract ondertekenen — Eggspress</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#FAF6EE;color:#241C14;margin:0;padding:40px 16px;}
+  .card{max-width:640px;margin:0 auto;background:#fff;border:1px solid #EAE1CF;border-radius:16px;padding:32px 28px;}
+  img.logo{height:24px;width:auto;margin-bottom:22px;display:block;}
+  h1{font-size:19px;margin:0 0 6px;}
+  p{font-size:14px;color:#8C7F6B;line-height:1.6;margin:0 0 16px;}
+  .tekst{white-space:pre-wrap;font-size:12.5px;line-height:1.6;background:#FAF6EE;border:1px solid #EAE1CF;border-radius:10px;padding:16px;max-height:420px;overflow-y:auto;margin-bottom:20px;color:#241C14;}
+  label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#8C7F6B;margin:14px 0 4px;}
+  input[type=text]{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #EAE1CF;border-radius:8px;font-size:14px;font-family:inherit;}
+  .akkoord{display:flex;align-items:flex-start;gap:8px;margin-top:18px;font-size:12.5px;color:#241C14;line-height:1.5}
+  .akkoord input{margin-top:3px}
+  button{margin-top:20px;width:100%;background:#E0281C;color:#fff;border:none;font-weight:700;font-size:14px;padding:13px 20px;border-radius:8px;cursor:pointer}
+  button:disabled{background:#D9CFC0;cursor:not-allowed}
+  .fout{color:#B3261E;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <img class="logo" src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
+  <div id="inhoud"><h1>Bezig...</h1><p>Een moment geduld.</p></div>
+</div>
+<script>
+const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0';
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function renderPrijslijst(snap){
+  const rij = (label,p) => `${label}\n€${Number(p.inkoop).toFixed(2).replace('.',',')}\n€${Number(p.verkoop).toFixed(2).replace('.',',')}`;
+  return [rij('Maat M',snap.m), rij('Maat L',snap.l), rij('Maat XL',snap.xl), rij('Bio',snap.bio)].join('\n\n');
+}
+
+function vulSjabloonIn(sjabloon, rij, adres){
+  const datumNL = rij.geboortedatum ? new Date(rij.geboortedatum).toLocaleDateString('nl-NL') : '';
+  return sjabloon
+    .replaceAll('{{naam}}', rij.naam || '')
+    .replaceAll('{{geboortedatum}}', datumNL)
+    .replaceAll('{{adres}}', adres || rij.adres || '(vul hieronder in)')
+    .replaceAll('{{prijslijst}}', renderPrijslijst(rij.prijslijst_snapshot));
+}
+
+async function sbGet(pad){
+  const res = await fetch(`${SB_URL}/rest/v1/${pad}`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
+  return res.json();
+}
+
+(async () => {
+  const inhoud = document.getElementById('inhoud');
+  const token = new URLSearchParams(window.location.search).get('token');
+  if (!token) { inhoud.innerHTML = '<h1>Ongeldige link</h1><p>Er ontbreekt een token in deze link.</p>'; return; }
+
+  let rij;
+  try {
+    const rijen = await sbGet(`contract_ondertekeningen?token=eq.${encodeURIComponent(token)}&select=*`);
+    rij = rijen[0];
+  } catch (e) { inhoud.innerHTML = '<h1>Er ging iets mis</h1><p>Probeer het later nog eens.</p>'; return; }
+  if (!rij) { inhoud.innerHTML = '<h1>Niet gevonden</h1><p>Deze link is niet (meer) geldig.</p>'; return; }
+
+  if (rij.status === 'compleet') {
+    inhoud.innerHTML = `<h1>Al helemaal getekend ✓</h1><p>Dit contract is compleet — er hoeft niets meer te gebeuren. Otto neemt het van hier over.</p>`;
+    return;
+  }
+  if (rij.status === 'geannuleerd') {
+    inhoud.innerHTML = `<h1>Niet meer geldig</h1><p>Deze contractlink is geannuleerd. Neem contact op met Eggspress als dit niet klopt.</p>`;
+    return;
+  }
+
+  const rol = rij.status === 'verkoper_getekend' ? 'ouder' : 'verkoper';
+  if (rol === 'ouder' && rij.versie !== 'minderjarig') {
+    inhoud.innerHTML = `<h1>Er ging iets mis</h1><p>Deze link verwacht geen ouder-handtekening. Neem contact op met Eggspress.</p>`;
+    return;
+  }
+
+  const sjabloonKey = rij.versie === 'minderjarig' ? 'tekst_minderjarig' : 'tekst_volwassen';
+  const sjabloonRij = await sbGet(`contract_instellingen?sleutel=eq.${sjabloonKey}&select=waarde`);
+  const sjabloon = sjabloonRij[0]?.waarde || '';
+
+  const heeftAdresVeld = rol === 'verkoper' && !rij.adres;
+  const tekstHtml = esc(vulSjabloonIn(sjabloon, rij, rij.adres));
+
+  const titel = rol === 'verkoper' ? `Contract voor ${esc(rij.naam)}` : `Toestemming ouder/verzorger — ${esc(rij.naam)}`;
+  const uitleg = rol === 'verkoper'
+    ? 'Lees het contract hieronder door. Vul je adres in (nodig om het contract compleet te maken) en teken door je naam te typen.'
+    : `${esc(rij.naam)} heeft dit contract al getekend. Omdat ${esc(rij.naam)} minderjarig is, is ook uw toestemming als ouder/verzorger nodig — lees het contract hieronder door.`;
+
+  inhoud.innerHTML = `
+    <h1>${titel}</h1>
+    <p>${uitleg}</p>
+    <div class="tekst" id="contract-tekst">${tekstHtml}</div>
+    ${heeftAdresVeld ? `<label for="in-adres">Jouw adres (straat, postcode, plaats)</label><input type="text" id="in-adres" placeholder="Hoofdstraat 1, 7311 AB Apeldoorn">` : ''}
+    <label for="in-naam">Volledige naam${rol === 'ouder' ? ' (ouder/verzorger)' : ''}</label>
+    <input type="text" id="in-naam" placeholder="Voor- en achternaam">
+    <label for="in-plaats">Plaats</label>
+    <input type="text" id="in-plaats" placeholder="Bijv. Apeldoorn">
+    <div class="akkoord"><input type="checkbox" id="in-akkoord"><label style="all:unset;font-size:12.5px;color:#241C14" for="in-akkoord">Ik heb het contract hierboven gelezen en ga akkoord. Deze getypte naam geldt als mijn handtekening.</label></div>
+    <button id="btn-tekenen">Onderteken</button>
+    <div class="fout" id="fout" style="display:none"></div>
+  `;
+
+  document.getElementById('btn-tekenen').addEventListener('click', async () => {
+    const naam = document.getElementById('in-naam').value.trim();
+    const plaats = document.getElementById('in-plaats').value.trim();
+    const adresEl = document.getElementById('in-adres');
+    const adres = adresEl ? adresEl.value.trim() : undefined;
+    const akkoord = document.getElementById('in-akkoord').checked;
+    const foutEl = document.getElementById('fout');
+    foutEl.style.display = 'none';
+
+    if (!naam) { foutEl.textContent = 'Vul je volledige naam in.'; foutEl.style.display = ''; return; }
+    if (heeftAdresVeld && !adres) { foutEl.textContent = 'Vul je adres in.'; foutEl.style.display = ''; return; }
+    if (!akkoord) { foutEl.textContent = 'Vink aan dat je akkoord gaat.'; foutEl.style.display = ''; return; }
+
+    const btn = document.getElementById('btn-tekenen');
+    btn.disabled = true; btn.textContent = 'Bezig...';
+    try {
+      const res = await fetch(`${SB_URL}/functions/v1/contract-tekenen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SB_KEY}` },
+        body: JSON.stringify({ token, rol, naam_getypt: naam, plaats, adres }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.fout || 'onbekende fout');
+      if (data.status === 'verkoper_getekend') {
+        inhoud.innerHTML = `<h1>Getekend ✓</h1><p>Bedankt! Omdat je minderjarig bent, hebben we ook een handtekening van je ouder/verzorger nodig. We hebben hen zojuist een e-mail gestuurd.</p>`;
+      } else {
+        inhoud.innerHTML = `<h1>Getekend ✓</h1><p>Bedankt! Het contract is compleet. Otto neemt het van hier over — je hoort snel meer.</p>`;
+      }
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Onderteken';
+      foutEl.textContent = 'Ondertekenen mislukt: ' + e.message;
+      foutEl.style.display = '';
+    }
+  });
+})();
+</script>
+</body>
+</html>
