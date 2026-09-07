@@ -103,8 +103,16 @@ async function sbGet(pad){
   if (!rij) { kopTitel.textContent = 'Niet gevonden'; inhoud.innerHTML = '<p class="intro">Deze link is niet (meer) geldig.</p>'; return; }
 
   if (rij.status === 'compleet') {
-    kopTitel.textContent = 'Al helemaal getekend ✓';
-    inhoud.innerHTML = `<p class="intro">Dit contract is compleet — er hoeft niets meer te gebeuren. Otto neemt het van hier over.</p>`;
+    kopEyebrow.textContent = 'Overeenkomst wederverkoop';
+    kopTitel.textContent = `Getekend contract — ${rij.naam}`;
+    const ondertekendDoor = [
+      rij.verkoper_naam_getypt ? `${rij.verkoper_naam_getypt} (verkoper) op ${new Date(rij.verkoper_getekend_op).toLocaleString('nl-NL')}` : null,
+      rij.ouder_naam_getypt ? `${rij.ouder_naam_getypt} (ouder/verzorger) op ${new Date(rij.ouder_getekend_op).toLocaleString('nl-NL')}` : null,
+    ].filter(Boolean);
+    inhoud.innerHTML = `
+      <p class="intro">Dit contract is volledig ondertekend door: ${esc(ondertekendDoor.join(' · '))}.</p>
+      <div class="doc">${contractHtml(rij.gegenereerde_tekst || '')}</div>
+    `;
     return;
   }
   if (rij.status === 'geannuleerd') {
