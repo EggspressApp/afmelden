@@ -109,9 +109,18 @@ async function sbGet(pad){
       rij.verkoper_naam_getypt ? `${rij.verkoper_naam_getypt} (verkoper) op ${new Date(rij.verkoper_getekend_op).toLocaleString('nl-NL')}` : null,
       rij.ouder_naam_getypt ? `${rij.ouder_naam_getypt} (ouder/verzorger) op ${new Date(rij.ouder_getekend_op).toLocaleString('nl-NL')}` : null,
     ].filter(Boolean);
+    const bewijsRegel = (rol, naam, tijd, ip, ua) => naam
+      ? `<div style="margin-bottom:10px"><strong>${esc(rol)}:</strong> ${esc(naam)}<br>Getekend op ${new Date(tijd).toLocaleString('nl-NL')}<br>IP-adres: ${esc(ip || 'onbekend')}<br>Apparaat/browser: ${esc(ua || 'onbekend')}</div>`
+      : '';
     inhoud.innerHTML = `
       <p class="intro">Dit contract is volledig ondertekend door: ${esc(ondertekendDoor.join(' · '))}.</p>
       <div class="doc">${contractHtml(rij.gegenereerde_tekst || '')}</div>
+      <div style="margin-top:18px;padding:14px 16px;background:var(--crème);border:1px solid var(--rand);border-radius:10px;font-size:11.5px;color:var(--muted);line-height:1.6">
+        <div style="font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:10px;color:#241C14;margin-bottom:8px">Bewijs van ondertekening</div>
+        ${bewijsRegel('Verkoper', rij.verkoper_naam_getypt, rij.verkoper_getekend_op, rij.verkoper_ip, rij.verkoper_useragent)}
+        ${bewijsRegel('Ouder/verzorger', rij.ouder_naam_getypt, rij.ouder_getekend_op, rij.ouder_ip, rij.ouder_useragent)}
+        <div style="margin-top:4px">Elke handtekening geldt als elektronische handtekening op basis van een getypte naam, expliciete akkoordverklaring en dit bewijsspoor (IP-adres, apparaat, tijdstip) — vastgelegd op het moment van tekenen.</div>
+      </div>
     `;
     return;
   }
