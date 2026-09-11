@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wachtwoord instellen — Eggspress</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<style>
+  :root{ --rood:#E0281C; --crème:#FAF6EE; --rand:#EAE1CF; --tekst:#241C14; --muted:#8C7F6B; }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--crème);color:var(--tekst);margin:0;padding:28px 14px 60px;}
+  .kaart{max-width:440px;margin:0 auto;background:#fff;border:1px solid var(--rand);border-radius:16px;overflow:hidden;box-shadow:0 2px 18px rgba(36,28,20,.05)}
+  .kop{background:var(--rood);padding:26px 26px 22px;text-align:center}
+  .kop img{height:26px;width:auto;background:#fff;padding:8px 16px;border-radius:8px;display:inline-block;margin-bottom:14px}
+  .kop h1{font-size:20px;color:#fff;margin:0;font-weight:800}
+  .lijf{padding:26px}
+  .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 20px}
+  label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 5px}
+  label:first-of-type{margin-top:0}
+  input[type=password]{width:100%;padding:11px 13px;border:1px solid var(--rand);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+  input[type=password]:focus{outline:2px solid var(--rood);outline-offset:-1px}
+  button{margin-top:20px;width:100%;background:var(--rood);color:#fff;border:none;font-weight:700;font-size:15px;padding:15px 20px;border-radius:10px;cursor:pointer}
+  button:disabled{background:#D9CFC0;cursor:not-allowed}
+  .fout{color:#B3261E;font-size:13px;margin-top:12px}
+  .bedankt{text-align:center;padding:10px 0}
+  .bedankt .emoji{font-size:44px;margin-bottom:10px}
+  .waarschuwing{font-size:12px;color:#8a6d00;background:#fff8e1;border:1px solid #f0dc90;border-radius:8px;padding:10px 12px;margin-top:16px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="kaart">
+  <div class="kop">
+    <img src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress">
+    <h1 id="kop-titel">Bezig...</h1>
+  </div>
+  <div class="lijf" id="inhoud"><p class="intro">Een moment geduld.</p></div>
+</div>
+<script>
+const firebaseConfig = {
+  projectId: "eggs-press",
+  appId: "1:297565396885:web:f850de40b38f2301d7609c",
+  storageBucket: "eggs-press.firebasestorage.app",
+  apiKey: "AIzaSyARNzqfDleNstG_3RzdKW2vwJZxDxZFZJI",
+  authDomain: "eggs-press.firebaseapp.com",
+  messagingSenderId: "297565396885",
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0';
+
+(async () => {
+  const inhoud = document.getElementById('inhoud');
+  const kopTitel = document.getElementById('kop-titel');
+  const params = new URLSearchParams(window.location.search);
+  const oobCode = params.get('oobCode');
+
+  if (!oobCode) {
+    kopTitel.textContent = 'Ongeldige link';
+    inhoud.innerHTML = '<p class="intro">Deze link mist een geldige code. Vraag een nieuwe link aan via "Wachtwoord vergeten" in de app.</p>';
+    return;
+  }
+
+  let email;
+  try {
+    email = await auth.verifyPasswordResetCode(oobCode);
+  } catch (e) {
+    kopTitel.textContent = 'Link verlopen';
+    inhoud.innerHTML = '<p class="intro">Deze link is niet meer geldig — reset-links werken maar één keer en verlopen na een tijdje. Vraag een nieuwe aan via "Wachtwoord vergeten" in de app.</p>';
+    return;
+  }
+
+  kopTitel.textContent = 'Wachtwoord instellen';
+  inhoud.innerHTML = `
+    <p class="intro">Voor <strong>${email.replace(/</g,'&lt;')}</strong>. Dit wachtwoord geldt meteen voor zowel de app als de webshop.</p>
+    <label for="in-ww">Nieuw wachtwoord</label>
+    <input type="password" id="in-ww" placeholder="Minimaal 6 tekens" autocomplete="new-password">
+    <label for="in-ww2">Herhaal wachtwoord</label>
+    <input type="password" id="in-ww2" placeholder="Nogmaals" autocomplete="new-password">
+    <button id="btn-opslaan">Wachtwoord instellen</button>
+    <div class="fout" id="fout" style="display:none"></div>
+  `;
+
+  document.getElementById('btn-opslaan').addEventListener('click', async () => {
+    const ww = document.getElementById('in-ww').value;
+    const ww2 = document.getElementById('in-ww2').value;
+    const foutEl = document.getElementById('fout');
+    foutEl.style.display = 'none';
+
+    if (ww.length < 6) { foutEl.textContent = 'Minimaal 6 tekens.'; foutEl.style.display = ''; return; }
+    if (ww !== ww2) { foutEl.textContent = 'De wachtwoorden komen niet overeen.'; foutEl.style.display = ''; return; }
+
+    const btn = document.getElementById('btn-opslaan');
+    btn.disabled = true; btn.textContent = 'Bezig...';
+
+    try {
+      await auth.confirmPasswordReset(oobCode, ww);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Wachtwoord instellen';
+      foutEl.textContent = 'Instellen mislukt: ' + (e.message || e); foutEl.style.display = '';
+      return;
+    }
+
+    // App-wachtwoord staat. WordPress-kant is een aparte, best-effort stap —
+    // lukt die niet, dan werkt de app in elk geval al en kan de webshop-kant
+    // later alsnog (Otto kan het opnieuw triggeren).
+    let wpWaarschuwing = '';
+    try {
+      const wpRes = await fetch(`${SB_URL}/functions/v1/wachtwoord-wordpress-sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SB_KEY}` },
+        body: JSON.stringify({ email, wachtwoord: ww }),
+      });
+      const wpData = await wpRes.json();
+      if (!wpData.success) {
+        wpWaarschuwing = `<div class="waarschuwing">Je app-wachtwoord staat goed. Voor de webshop-kant ging iets mis (${(wpData.fout||'onbekende fout').replace(/</g,'&lt;')}) — neem contact op met Otto als je daar ook wilt inloggen.</div>`;
+      }
+    } catch (e) {
+      wpWaarschuwing = `<div class="waarschuwing">Je app-wachtwoord staat goed. De webshop-kant kon niet bijgewerkt worden — neem contact op met Otto als je daar ook wilt inloggen.</div>`;
+    }
+
+    kopTitel.textContent = 'Gelukt! ✓';
+    inhoud.innerHTML = `<div class="bedankt"><div class="emoji">🎉</div><p class="intro" style="margin:0">Je wachtwoord staat ingesteld — je kunt nu inloggen in de app.</p>${wpWaarschuwing}</div>`;
+  });
+})();
+</script>
+</body>
+</html>
