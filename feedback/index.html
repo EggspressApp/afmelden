@@ -17,9 +17,9 @@
   .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 22px}
   label{display:block;font-size:13px;font-weight:700;color:var(--tekst);margin:20px 0 8px;line-height:1.4}
   label:first-of-type{margin-top:0}
-  .sterren{display:flex;gap:6px}
-  .ster{font-size:30px;cursor:pointer;color:var(--rand);user-select:none;line-height:1;transition:color .1s}
-  .ster.aan{color:var(--rood)}
+  .schaal{display:flex;gap:6px;flex-wrap:wrap}
+  .schaal-getal{width:34px;height:34px;border-radius:8px;border:1px solid var(--rand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:#fff;color:var(--tekst)}
+  .schaal-getal.aan{background:var(--rood);border-color:var(--rood);color:#fff}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{border:1px solid var(--rand);border-radius:20px;padding:8px 14px;font-size:12.5px;cursor:pointer;background:var(--crème);user-select:none}
   .chip.aan{background:var(--rood);border-color:var(--rood);color:#fff;font-weight:700}
@@ -48,7 +48,13 @@
 <script>
 const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0';
-const KOOPREDENEN = ['Verse eieren', 'Gemak / thuisbezorgd', 'Lokaal / steun een jonge ondernemer', 'Prijs', 'Kwaliteit', 'Anders'];
+const KOOPREDENEN = [
+  'De eieren zelf (kwaliteit, versheid, smaak)',
+  'Het gemak (thuisbezorgd, hoef niet naar de winkel)',
+  'De verkoper (leuk, gezellig, ken hem persoonlijk)',
+  'Lokaal steunen (buurtkinderen, goed doel)',
+  'Een combinatie',
+];
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
@@ -57,9 +63,12 @@ async function sbGet(pad){
   return res.json();
 }
 
-function sterrenHtml(veld, label){
-  const sterren = [1,2,3,4,5].map(n => `<span class="ster" data-veld="${veld}" data-w="${n}">★</span>`).join('');
-  return `<label>${esc(label)}</label><div class="sterren" id="sterren-${veld}">${sterren}</div>`;
+// 1-10 schaal (zelfde als het oorspronkelijke Google Form) — geen sterren, want 10 sterren
+// op rij is onhandig op een telefoonscherm. Getallen laten wel dezelfde "vul tot hier"-
+// interactie toe: alles t/m het gekozen cijfer kleurt mee.
+function schaalHtml(veld, label){
+  const getallen = Array.from({length:10}, (_,i) => i+1).map(n => `<span class="schaal-getal" data-veld="${veld}" data-w="${n}">${n}</span>`).join('');
+  return `<label>${esc(label)}</label><div class="schaal" id="schaal-${veld}">${getallen}</div>`;
 }
 
 (async () => {
@@ -83,15 +92,18 @@ function sterrenHtml(veld, label){
   inhoud.innerHTML = `
     <p class="intro">Uw mening maakt het verschil voor ${esc(naam)} om een betere verkoper te worden! Vul in 2 minuten deze korte vragenlijst in — dat helpt enorm.</p>
 
-    ${sterrenHtml('kwaliteit_eieren', 'Hoe beoordeelt u de kwaliteit van de eieren?')}
-    ${sterrenHtml('contact_ervaring', `Hoe ervaart u het contact met ${esc(naam)}?`)}
-    ${sterrenHtml('bezorg_betrouwbaarheid', 'Hoe beoordeelt u de betrouwbaarheid van de bezorging?')}
+    ${schaalHtml('kwaliteit_eieren', 'Hoe beoordeelt u de kwaliteit van de eieren?')}
+    ${schaalHtml('contact_ervaring', `Hoe ervaart u het contact met ${esc(naam)}?`)}
+    ${schaalHtml('bezorg_betrouwbaarheid', 'Hoe beoordeelt u de betrouwbaarheid van de bezorging?')}
 
-    <label>Waarom koopt u bij Eggspress? <span style="font-weight:400;color:var(--muted)">(meerdere mogelijk)</span></label>
+    <label>Waarom koopt u bij Eggspress? Kies wat het beste past: <span style="font-weight:400;color:var(--muted)">(meerdere mogelijk)</span></label>
     <div class="chips" id="chips-koopreden">${KOOPREDENEN.map(k => `<div class="chip" data-w="${esc(k)}">${esc(k)}</div>`).join('')}</div>
 
     <label>Wat betekent ${esc(naam)} voor u in de buurt?</label>
     <textarea id="in-buurt" placeholder="Vrij in te vullen..."></textarea>
+
+    <label>Waarvoor gebruikt u de eieren?</label>
+    <textarea id="in-gebruik" placeholder="Bijv. bakken, koken, cadeau doen..."></textarea>
 
     <label>Zou u ${esc(naam)} aanbevelen bij buren/vrienden?</label>
     <div class="jn" id="jn-aanbeveling"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nee">Nee</button></div>
@@ -108,11 +120,11 @@ function sterrenHtml(veld, label){
     <div class="voettekst">Uw antwoorden gaan rechtstreeks naar Eggspress en helpen ${esc(naam)} persoonlijk verder.</div>
   `;
 
-  document.querySelectorAll('.ster').forEach(el => {
+  document.querySelectorAll('.schaal-getal').forEach(el => {
     el.addEventListener('click', () => {
       const veld = el.dataset.veld, w = +el.dataset.w;
       waarden[veld] = w;
-      document.querySelectorAll(`#sterren-${veld} .ster`).forEach(s => s.classList.toggle('aan', +s.dataset.w <= w));
+      document.querySelectorAll(`#schaal-${veld} .schaal-getal`).forEach(s => s.classList.toggle('aan', +s.dataset.w <= w));
     });
   });
   document.querySelectorAll('#chips-koopreden .chip').forEach(el => {
@@ -133,7 +145,7 @@ function sterrenHtml(veld, label){
     const foutEl = document.getElementById('fout');
     foutEl.style.display = 'none';
     if (!waarden.kwaliteit_eieren || !waarden.contact_ervaring || !waarden.bezorg_betrouwbaarheid) {
-      foutEl.textContent = 'Geef alstublieft alle drie de sterrenscores op.'; foutEl.style.display = ''; return;
+      foutEl.textContent = 'Geef alstublieft alle drie de scores op.'; foutEl.style.display = ''; return;
     }
     const btn = document.getElementById('btn-verstuur');
     btn.disabled = true; btn.textContent = 'Bezig...';
@@ -152,6 +164,7 @@ function sterrenHtml(veld, label){
           aanbeveling_toelichting: document.getElementById('in-aanbeveling-toelichting').value.trim(),
           tip: document.getElementById('in-tip').value.trim(),
           top: document.getElementById('in-top').value.trim(),
+          gebruik_eieren: document.getElementById('in-gebruik').value.trim(),
         }),
       });
       const data = await res.json();
