@@ -16,7 +16,7 @@
   .lijf{padding:26px}
   .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 22px}
   label{display:block;font-size:13px;font-weight:700;color:var(--tekst);margin:20px 0 8px;line-height:1.4}
-  label:first-of-type{margin-top:0}
+  .vraag:first-of-type label{margin-top:0}
   .schaal{display:flex;gap:6px;flex-wrap:wrap}
   .schaal-getal{width:34px;height:34px;border-radius:8px;border:1px solid var(--rand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:#fff;color:var(--tekst)}
   .schaal-getal.aan{background:var(--rood);border-color:var(--rood);color:#fff}
@@ -48,27 +48,35 @@
 <script>
 const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0';
-const KOOPREDENEN = [
-  'De eieren zelf (kwaliteit, versheid, smaak)',
-  'Het gemak (thuisbezorgd, hoef niet naar de winkel)',
-  'De verkoper (leuk, gezellig, ken hem persoonlijk)',
-  'Lokaal steunen (buurtkinderen, goed doel)',
-  'Een combinatie',
-];
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function metNaam(tekst, naam){ return (tekst||'').replaceAll('{naam}', naam); }
 
 async function sbGet(pad){
   const res = await fetch(`${SB_URL}/rest/v1/${pad}`, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
   return res.json();
 }
 
-// 1-10 schaal (zelfde als het oorspronkelijke Google Form) — geen sterren, want 10 sterren
-// op rij is onhandig op een telefoonscherm. Getallen laten wel dezelfde "vul tot hier"-
-// interactie toe: alles t/m het gekozen cijfer kleurt mee.
-function schaalHtml(veld, label){
-  const getallen = Array.from({length:10}, (_,i) => i+1).map(n => `<span class="schaal-getal" data-veld="${veld}" data-w="${n}">${n}</span>`).join('');
-  return `<label>${esc(label)}</label><div class="schaal" id="schaal-${veld}">${getallen}</div>`;
+// Bouwt één vraagblok op basis van het type uit feedback_vragen — de vragenlijst zelf is
+// instelbaar via het dashboard (Instellingen), dus hardcoden we hier geen tekst/opties meer.
+function vraagHtml(v, naam){
+  const label = `<label for="${v.veld}">${esc(metNaam(v.label, naam))}${v.verplicht ? '' : ' <span style="font-weight:400;color:var(--muted)">(optioneel)</span>'}</label>`;
+  if (v.type === 'schaal') {
+    const getallen = Array.from({length:10}, (_,i) => i+1).map(n => `<span class="schaal-getal" data-veld="${v.veld}" data-w="${n}">${n}</span>`).join('');
+    return `<div class="vraag">${label}<div class="schaal" id="schaal-${v.veld}">${getallen}</div></div>`;
+  }
+  if (v.type === 'checkboxes') {
+    const opties = Array.isArray(v.opties) ? v.opties : [];
+    return `<div class="vraag">${label}<div class="chips" id="chips-${v.veld}">${opties.map(o => `<div class="chip" data-veld="${v.veld}" data-w="${esc(o)}">${esc(o)}</div>`).join('')}</div></div>`;
+  }
+  if (v.type === 'ja_nee') {
+    return `<div class="vraag">${label}
+      <div class="jn" id="jn-${v.veld}"><button type="button" data-veld="${v.veld}" data-w="ja">Ja</button><button type="button" data-veld="${v.veld}" data-w="nee">Nee</button></div>
+      <textarea id="toelichting-${v.veld}" placeholder="Toelichting (optioneel)" style="margin-top:10px"></textarea>
+    </div>`;
+  }
+  // 'open'
+  return `<div class="vraag">${label}<textarea id="open-${v.veld}"></textarea></div>`;
 }
 
 (async () => {
@@ -77,44 +85,25 @@ function schaalHtml(veld, label){
   const vk = new URLSearchParams(window.location.search).get('vk');
   if (!vk) { kopTitel.textContent = 'Ongeldige link'; inhoud.innerHTML = '<p class="intro">Er ontbreekt een verkoper-ID in deze link.</p>'; return; }
 
-  let verkoper;
+  let verkoper, vragen;
   try {
-    const rijen = await sbGet(`verkopers?id=eq.${encodeURIComponent(vk)}&select=id,voornaam,nummer`);
-    verkoper = rijen[0];
+    const [verkoperRijen, vraagRijen] = await Promise.all([
+      sbGet(`verkopers?id=eq.${encodeURIComponent(vk)}&select=id,voornaam,nummer`),
+      sbGet(`feedback_vragen?actief=eq.true&select=*&order=volgorde`),
+    ]);
+    verkoper = verkoperRijen[0];
+    vragen = vraagRijen;
   } catch (e) { kopTitel.textContent = 'Er ging iets mis'; inhoud.innerHTML = '<p class="intro">Probeer het later nog eens.</p>'; return; }
   if (!verkoper) { kopTitel.textContent = 'Niet gevonden'; inhoud.innerHTML = '<p class="intro">Deze link klopt niet (meer).</p>'; return; }
 
   const naam = verkoper.voornaam || 'uw verkoper';
   kopTitel.textContent = `Help ${naam} verder!`;
 
-  const waarden = { kwaliteit_eieren: 0, contact_ervaring: 0, bezorg_betrouwbaarheid: 0, koopreden: new Set(), aanbeveling: null };
+  const antwoorden = {}; // veld -> waarde (schaal: getal, checkboxes: Set, ja_nee: 'ja'/'nee', open: string via .value)
 
   inhoud.innerHTML = `
     <p class="intro">Uw mening maakt het verschil voor ${esc(naam)} om een betere verkoper te worden! Vul in 2 minuten deze korte vragenlijst in — dat helpt enorm.</p>
-
-    ${schaalHtml('kwaliteit_eieren', 'Hoe beoordeelt u de kwaliteit van de eieren?')}
-    ${schaalHtml('contact_ervaring', `Hoe ervaart u het contact met ${esc(naam)}?`)}
-    ${schaalHtml('bezorg_betrouwbaarheid', 'Hoe beoordeelt u de betrouwbaarheid van de bezorging?')}
-
-    <label>Waarom koopt u bij Eggspress? Kies wat het beste past: <span style="font-weight:400;color:var(--muted)">(meerdere mogelijk)</span></label>
-    <div class="chips" id="chips-koopreden">${KOOPREDENEN.map(k => `<div class="chip" data-w="${esc(k)}">${esc(k)}</div>`).join('')}</div>
-
-    <label>Wat betekent ${esc(naam)} voor u in de buurt?</label>
-    <textarea id="in-buurt" placeholder="Vrij in te vullen..."></textarea>
-
-    <label>Waarvoor gebruikt u de eieren?</label>
-    <textarea id="in-gebruik" placeholder="Bijv. bakken, koken, cadeau doen..."></textarea>
-
-    <label>Zou u ${esc(naam)} aanbevelen bij buren/vrienden?</label>
-    <div class="jn" id="jn-aanbeveling"><button type="button" data-w="ja">Ja</button><button type="button" data-w="nee">Nee</button></div>
-    <textarea id="in-aanbeveling-toelichting" placeholder="Toelichting (optioneel)" style="margin-top:10px"></textarea>
-
-    <label>Geeft u ${esc(naam)} één tip?</label>
-    <textarea id="in-tip" placeholder="Waar kan het beter?"></textarea>
-
-    <label>Geeft u ${esc(naam)} één top?</label>
-    <textarea id="in-top" placeholder="Wat ging er goed?"></textarea>
-
+    ${vragen.map(v => vraagHtml(v, naam)).join('')}
     <button class="verstuur" id="btn-verstuur">Versturen</button>
     <div class="fout" id="fout" style="display:none"></div>
     <div class="voettekst">Uw antwoorden gaan rechtstreeks naar Eggspress en helpen ${esc(naam)} persoonlijk verder.</div>
@@ -123,49 +112,60 @@ function schaalHtml(veld, label){
   document.querySelectorAll('.schaal-getal').forEach(el => {
     el.addEventListener('click', () => {
       const veld = el.dataset.veld, w = +el.dataset.w;
-      waarden[veld] = w;
+      antwoorden[veld] = w;
       document.querySelectorAll(`#schaal-${veld} .schaal-getal`).forEach(s => s.classList.toggle('aan', +s.dataset.w <= w));
     });
   });
-  document.querySelectorAll('#chips-koopreden .chip').forEach(el => {
+  document.querySelectorAll('.chips .chip').forEach(el => {
     el.addEventListener('click', () => {
-      const w = el.dataset.w;
-      if (waarden.koopreden.has(w)) { waarden.koopreden.delete(w); el.classList.remove('aan'); }
-      else { waarden.koopreden.add(w); el.classList.add('aan'); }
+      const veld = el.dataset.veld, w = el.dataset.w;
+      if (!antwoorden[veld]) antwoorden[veld] = new Set();
+      if (antwoorden[veld].has(w)) { antwoorden[veld].delete(w); el.classList.remove('aan'); }
+      else { antwoorden[veld].add(w); el.classList.add('aan'); }
     });
   });
-  document.querySelectorAll('#jn-aanbeveling button').forEach(el => {
+  document.querySelectorAll('.jn button').forEach(el => {
     el.addEventListener('click', () => {
-      waarden.aanbeveling = el.dataset.w === 'ja';
-      document.querySelectorAll('#jn-aanbeveling button').forEach(b => b.classList.toggle('aan', b === el));
+      const veld = el.dataset.veld;
+      antwoorden[veld] = el.dataset.w === 'ja';
+      document.querySelectorAll(`#jn-${veld} button`).forEach(b => b.classList.toggle('aan', b === el));
     });
   });
 
   document.getElementById('btn-verstuur').addEventListener('click', async () => {
     const foutEl = document.getElementById('fout');
     foutEl.style.display = 'none';
-    if (!waarden.kwaliteit_eieren || !waarden.contact_ervaring || !waarden.bezorg_betrouwbaarheid) {
-      foutEl.textContent = 'Geef alstublieft alle drie de scores op.'; foutEl.style.display = ''; return;
+
+    const ontbrekend = vragen.filter(v => v.verplicht && (antwoorden[v.veld] === undefined || antwoorden[v.veld] === null));
+    if (ontbrekend.length) {
+      foutEl.textContent = `Vul in elk geval in: ${ontbrekend.map(v => metNaam(v.label, naam)).join(', ')}`;
+      foutEl.style.display = ''; return;
     }
+
+    const payload = {};
+    let aanbevelingToelichting = '';
+    vragen.forEach(v => {
+      if (v.type === 'open') {
+        const val = document.getElementById(`open-${v.veld}`).value.trim();
+        if (val) payload[v.veld] = val;
+      } else if (v.type === 'checkboxes') {
+        if (antwoorden[v.veld]?.size) payload[v.veld] = [...antwoorden[v.veld]];
+      } else if (v.type === 'ja_nee') {
+        if (antwoorden[v.veld] !== undefined) payload[v.veld] = antwoorden[v.veld];
+        const toel = document.getElementById(`toelichting-${v.veld}`)?.value.trim();
+        if (toel && v.veld === 'aanbeveling') aanbevelingToelichting = toel;
+      } else if (v.type === 'schaal') {
+        if (antwoorden[v.veld] !== undefined) payload[v.veld] = antwoorden[v.veld];
+      }
+    });
+
     const btn = document.getElementById('btn-verstuur');
     btn.disabled = true; btn.textContent = 'Bezig...';
     try {
       const res = await fetch(`${SB_URL}/functions/v1/feedback-opslaan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SB_KEY}` },
-        body: JSON.stringify({
-          verkoper_id: verkoper.id,
-          kwaliteit_eieren: waarden.kwaliteit_eieren,
-          contact_ervaring: waarden.contact_ervaring,
-          bezorg_betrouwbaarheid: waarden.bezorg_betrouwbaarheid,
-          koopreden: [...waarden.koopreden],
-          buurt_betekenis: document.getElementById('in-buurt').value.trim(),
-          aanbeveling: waarden.aanbeveling,
-          aanbeveling_toelichting: document.getElementById('in-aanbeveling-toelichting').value.trim(),
-          tip: document.getElementById('in-tip').value.trim(),
-          top: document.getElementById('in-top').value.trim(),
-          gebruik_eieren: document.getElementById('in-gebruik').value.trim(),
-        }),
+        body: JSON.stringify({ verkoper_id: verkoper.id, antwoorden: payload, aanbeveling_toelichting: aanbevelingToelichting }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.fout || 'onbekende fout');
