@@ -17,8 +17,10 @@
   .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 22px}
   label{display:block;font-size:13px;font-weight:700;color:var(--tekst);margin:20px 0 8px;line-height:1.4}
   .vraag:first-of-type label{margin-top:0}
-  .schaal{display:flex;gap:6px;flex-wrap:wrap}
-  .schaal-getal{width:34px;height:34px;border-radius:8px;border:1px solid var(--rand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;user-select:none;background:#fff;color:var(--tekst)}
+  /* Grid i.p.v. flex-wrap: altijd exact 10 op één rij, ook op een smalle telefoon —
+     anders wrapt 'm (bijv. 8 + een verdwaalde 9 en 10 op de volgende regel). */
+  .schaal{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+  .schaal-getal{aspect-ratio:1;min-width:0;border-radius:6px;border:1px solid var(--rand);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;user-select:none;background:#fff;color:var(--tekst)}
   .schaal-getal.aan{background:var(--rood);border-color:var(--rood);color:#fff}
   .chips{display:flex;flex-wrap:wrap;gap:8px}
   .chip{border:1px solid var(--rand);border-radius:20px;padding:8px 14px;font-size:12.5px;cursor:pointer;background:var(--crème);user-select:none}
@@ -136,12 +138,9 @@ function vraagHtml(v, naam){
     const foutEl = document.getElementById('fout');
     foutEl.style.display = 'none';
 
-    const ontbrekend = vragen.filter(v => v.verplicht && (antwoorden[v.veld] === undefined || antwoorden[v.veld] === null));
-    if (ontbrekend.length) {
-      foutEl.textContent = `Vul in elk geval in: ${ontbrekend.map(v => metNaam(v.label, naam)).join(', ')}`;
-      foutEl.style.display = ''; return;
-    }
-
+    // Payload eerst opbouwen uit de daadwerkelijke bron per type (voor 'open' is dat de
+    // textarea zelf, niet het antwoorden-object — anders werd een verplichte open vraag
+    // altijd als "niet ingevuld" gezien, ook als 'm wél was beantwoord).
     const payload = {};
     let aanbevelingToelichting = '';
     vragen.forEach(v => {
@@ -158,6 +157,12 @@ function vraagHtml(v, naam){
         if (antwoorden[v.veld] !== undefined) payload[v.veld] = antwoorden[v.veld];
       }
     });
+
+    const ontbrekend = vragen.filter(v => v.verplicht && payload[v.veld] === undefined);
+    if (ontbrekend.length) {
+      foutEl.textContent = `Vul in elk geval in: ${ontbrekend.map(v => metNaam(v.label, naam)).join(', ')}`;
+      foutEl.style.display = ''; return;
+    }
 
     const btn = document.getElementById('btn-verstuur');
     btn.disabled = true; btn.textContent = 'Bezig...';
