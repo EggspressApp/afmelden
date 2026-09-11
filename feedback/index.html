@@ -170,7 +170,16 @@ function vraagHtml(v, naam){
       const data = await res.json();
       if (!data.success) throw new Error(data.fout || 'onbekende fout');
       kopTitel.textContent = 'Bedankt! ✓';
-      inhoud.innerHTML = `<div class="bedankt"><div class="emoji">🙏</div><p class="intro" style="margin:0">Ontzettend bedankt voor uw tijd — ${esc(naam)} is hier heel blij mee!</p></div>`;
+      // Alleen tevreden klanten vragen om ook een Google-review achter te laten — bij een
+      // lage score zou dat averechts werken (dan liever alleen de interne feedback).
+      const schaalScores = vragen.filter(v => v.type === 'schaal').map(v => payload[v.veld]).filter(n => n !== undefined);
+      const gemScore = schaalScores.length ? schaalScores.reduce((s,n)=>s+n,0) / schaalScores.length : 0;
+      const reviewBlok = gemScore >= 8 ? `
+        <div style="margin-top:20px;padding:16px;background:var(--crème);border:1px solid var(--rand);border-radius:10px">
+          <p style="font-size:13px;line-height:1.5;margin:0 0 12px">U zou ons enorm helpen door ook een review op Google achter te laten! ⭐</p>
+          <a href="https://search.google.com/local/writereview?ftid=0x47c7c79a56b939ff:0x7a18aee96eec61e3" target="_blank" rel="noopener" style="display:inline-block;background:var(--rood);color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:11px 20px;border-radius:8px">Review achterlaten op Google</a>
+        </div>` : '';
+      inhoud.innerHTML = `<div class="bedankt"><div class="emoji">🙏</div><p class="intro" style="margin:0">Ontzettend bedankt voor uw tijd — ${esc(naam)} is hier heel blij mee!</p>${reviewBlok}</div>`;
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Versturen';
       foutEl.textContent = 'Versturen mislukt: ' + e.message; foutEl.style.display = '';
