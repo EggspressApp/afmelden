@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vertrekdocument — Eggspress</title>
+<style>
+  :root{ --rood:#E0281C; --rood-donker:#B3201A; --creme:#FAF6EE; --rand:#EAE1CF; --tekst:#241C14; --muted:#8C7F6B; --groen:#3A7D44; --groen-zacht:#EAF3EC; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--creme);color:var(--tekst);padding:28px 14px 60px;}
+
+  .kaart{max-width:600px;margin:0 auto;background:#fff;border:1px solid var(--rand);border-radius:16px;overflow:hidden;box-shadow:0 2px 18px rgba(36,28,20,.05)}
+  .kop{background:var(--rood);padding:26px 26px 22px;text-align:center}
+  .kop .logo{padding:9px 16px;background:#fff;border-radius:8px;display:inline-flex;align-items:center;margin-bottom:14px}
+  .kop .logo img{height:22px;width:auto;display:block}
+  .kop .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.8);margin-bottom:4px}
+  .kop h1{font-size:20px;color:#fff;margin:0;font-weight:800;text-wrap:balance}
+
+  .lijf{padding:26px}
+  .lijf > p.intro{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 22px}
+
+  .sectielabel{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 10px}
+
+  .redenen{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+  .reden{border:1.5px solid var(--rand);border-radius:20px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--tekst);transition:all .12s}
+  .reden.gekozen{border-color:var(--rood);background:var(--rood);color:#fff}
+
+  textarea{width:100%;padding:12px 13px;border:1px solid var(--rand);border-radius:10px;font-size:13.5px;font-family:inherit;background:var(--creme);resize:vertical;min-height:70px;line-height:1.5}
+  textarea:focus{outline:2px solid var(--rood);outline-offset:-1px}
+
+  .klanten-kop{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px;flex-wrap:wrap;gap:6px}
+  .klanten-kop .sectielabel{margin:0}
+  .klanten-aantal{font-size:12px;color:var(--muted)}
+  .klanten-uitleg{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0 0 12px}
+
+  .totalen{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+  .totaal{background:var(--creme);border:1px solid var(--rand);border-radius:10px;padding:9px 10px;text-align:center}
+  .totaal b{display:block;font-size:17px;color:var(--tekst);font-variant-numeric:tabular-nums}
+  .totaal span{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+  .totaal.waarschuwing b{color:var(--rood)}
+
+  .klantenlijst{border:1px solid var(--rand);border-radius:12px;max-height:440px;overflow-y:auto;background:var(--creme)}
+  .klant{display:flex;flex-wrap:wrap;gap:6px 11px;align-items:center;padding:10px 10px 10px 14px;border-bottom:1px solid var(--rand)}
+  .klant-nr{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--rand);color:var(--muted);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .klant-tekst{flex:1 1 140px;min-width:0;display:flex;gap:6px}
+  .klant-tekst input{flex:1;min-width:0;padding:6px 8px;border:1px solid transparent;border-radius:6px;font-size:12.5px;font-family:inherit;background:transparent}
+  .klant-tekst input:hover,.klant-tekst input:focus{background:#fff;border-color:var(--rand);outline:none}
+  .klant-tekst input.naam{font-weight:700}
+  .klant-tekst input.adres.leeg{border-color:var(--rood);background:#fff}
+  .klant-verwijder{flex-shrink:0;width:26px;height:26px;border-radius:7px;border:1px solid var(--rand);background:#fff;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .klant-verwijder:hover{border-color:var(--rood);color:var(--rood)}
+
+  .klant-details{flex:1 1 100%;display:flex;gap:6px;padding-left:33px}
+  .klant-details .mini{flex:1;min-width:0}
+  .klant-details label{display:block;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:2px}
+  .klant-details input,.klant-details select{width:100%;padding:6px 8px;border:1px solid var(--rand);border-radius:6px;font-size:11.5px;font-family:inherit;background:#fff}
+  .klant-details input:focus,.klant-details select:focus{outline:2px solid var(--rood);outline-offset:-1px}
+
+  .klant-toevoegen{padding:12px 14px;background:#fff}
+  .klant-toevoegen .rij1{display:flex;gap:8px;align-items:flex-start}
+  .klant-toevoegen .veld{flex:1;min-width:0}
+  .klant-toevoegen input,.klant-toevoegen select{width:100%;padding:9px 11px;border:1px solid var(--rand);border-radius:8px;font-size:12.5px;font-family:inherit;background:#fff}
+  .klant-toevoegen input:focus,.klant-toevoegen select:focus{outline:2px solid var(--rood);outline-offset:-1px}
+  .veld-hint{font-size:9.5px;color:var(--muted);margin-top:3px;padding-left:1px}
+  .klant-toevoegen .toevoegen-btn{flex-shrink:0;background:var(--tekst);color:#fff;border:none;border-radius:8px;width:32px;height:32px;font-size:16px;cursor:pointer;line-height:1}
+  .klant-toevoegen .rij2{display:flex;gap:6px;margin-top:8px;padding-left:1px}
+  .klant-toevoegen .rij2 .mini{flex:1;min-width:0}
+  .klant-toevoegen .rij2 label{display:block;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:2px}
+  .klant-toevoegen .rij2 input,.klant-toevoegen .rij2 select{padding:6px 8px;font-size:11.5px}
+
+  .lege-lijst{padding:22px 18px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.6}
+
+  .akkoord{display:flex;align-items:flex-start;gap:9px;margin-top:22px;font-size:12.5px;color:var(--tekst);line-height:1.5;background:var(--groen-zacht);border:1px solid #CFE3D2;border-radius:10px;padding:13px 14px}
+  .akkoord input{margin-top:3px;flex-shrink:0;accent-color:var(--groen)}
+  .akkoord b{color:var(--groen)}
+
+  button.verstuur{margin-top:20px;width:100%;background:var(--rood);color:#fff;border:none;font-weight:700;font-size:15px;padding:15px 20px;border-radius:10px;cursor:pointer;font-family:inherit}
+  button.verstuur:hover{background:var(--rood-donker)}
+  button.verstuur:disabled{background:#D9CFC0;cursor:not-allowed}
+
+  .fout{color:#B3261E;font-size:13px;margin-top:12px;text-align:center}
+  .voettekst{text-align:center;font-size:10.5px;color:var(--muted);margin-top:16px}
+  .laden,.klaar{padding:40px 26px;text-align:center;color:var(--muted);font-size:14px}
+  .klaar b{display:block;color:var(--tekst);font-size:17px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="kaart">
+  <div class="kop">
+    <div class="logo"><img src="https://www.eggspress.nl/wp-content/uploads/2026/03/eggspress.svg" alt="Eggspress"></div>
+    <div class="eyebrow">Vertrekdocument</div>
+    <h1 id="kop-titel">Een moment...</h1>
+  </div>
+  <div class="lijf" id="inhoud"><div class="laden">Een moment geduld.</div></div>
+</div>
+
+<script>
+const SB_URL = 'https://ckpxdkodiaxpsfmackat.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrcHhka29kaWF4cHNmbWFja2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDcyODksImV4cCI6MjA5NzA4MzI4OX0.kzzUr4AGPcypNXPoBWyb2WpKpK8Gq2fNyFfb9UJGiL0';
+
+const REDENEN = ['Te weinig klanten in mijn wijk', 'Schoolwerk of drukte', 'Verhuizing', 'Verdienste past niet meer', 'Andere hobby of bijbaan', 'Iets anders'];
+
+const params = new URLSearchParams(location.search);
+const token = params.get('token');
+
+let klanten = [];
+let gekozenReden = null;
+let voornaam = '';
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+async function init(){
+  const inhoud = document.getElementById('inhoud');
+  if (!token) {
+    document.getElementById('kop-titel').textContent = 'Ongeldige link';
+    inhoud.innerHTML = '<p class="fout">Deze link mist een token. Vraag Otto om een nieuwe link.</p>';
+    return;
+  }
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/vertrekdocument-ophalen`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${SB_KEY}`, 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const d = await res.json();
+    if (!d.success) {
+      document.getElementById('kop-titel').textContent = 'Niet gevonden';
+      inhoud.innerHTML = `<p class="fout">${esc(d.fout || 'Deze link is niet geldig.')}</p>`;
+      return;
+    }
+    voornaam = d.naam || '';
+    if (d.status === 'ingevuld') {
+      document.getElementById('kop-titel').textContent = `Bedankt, ${esc(voornaam)}!`;
+      inhoud.innerHTML = '<div class="klaar"><b>Dit document is al ingevuld</b>Otto heeft je antwoorden al ontvangen — je hoeft niks meer te doen.</div>';
+      return;
+    }
+    klanten = (d.klanten || []).map(k => ({ naam: k.naam || '', adres: k.adres || '', telefoon: k.telefoon || '', aantal: '', maat: '', frequentie: '' }));
+    document.getElementById('kop-titel').textContent = `Tot ziens, ${esc(voornaam)}!`;
+    renderFormulier();
+  } catch (e) {
+    document.getElementById('kop-titel').textContent = 'Er ging iets mis';
+    inhoud.innerHTML = `<p class="fout">Kon de pagina niet laden: ${esc(e.message)}</p>`;
+  }
+}
+
+function renderFormulier(){
+  const inhoud = document.getElementById('inhoud');
+  const gevondenTekst = klanten.length
+    ? `${klanten.length} adressen · automatisch opgehaald uit je account`
+    : 'Geen klanten automatisch gevonden — vul ze hieronder zelf in';
+  const uitlegTekst = klanten.length
+    ? `Dit is precies de lijst die nu in jouw app staat — de aantallen/maat/frequentie stonden daar niet apart in, dus die staan nu leeg. Vul die erbij waar je het nog weet, dan weet je opvolger meteen waar-ie aan toe is. Adres is verplicht, de rest mag leeg. <b>Wisselt het aantal per keer?</b> Vul dan het laagste aantal in dat je meestal levert — dan komt je opvolger nooit dozen tekort.`
+    : `Je hebt de app niet gebruikt om je klanten bij te houden — geen probleem. Vul hieronder zelf in wie je klanten zijn (adres verplicht, de rest mag). <b>Wisselt het aantal per keer?</b> Vul dan het laagste aantal in dat je meestal levert.`;
+
+  inhoud.innerHTML = `
+    <p class="intro">Jammer dat je stopt als verkoper bij Eggspress — fijn dat je dit even voor ons invult. Zo weten we waarom je stopt én kunnen we je klanten netjes overdragen aan je opvolger, zodat zij gewoon hun eieren blijven krijgen.</p>
+
+    <div class="sectielabel">Waarom stop je?</div>
+    <div class="redenen" id="redenen"></div>
+
+    <div class="sectielabel">Toelichting (optioneel)</div>
+    <textarea id="toelichting" placeholder="Vertel er gerust iets bij..."></textarea>
+
+    <div class="klanten-kop">
+      <div class="sectielabel" style="margin:0">Jouw klanten</div>
+      <div class="klanten-aantal">${esc(gevondenTekst)}</div>
+    </div>
+    <div class="totalen" id="totalen"></div>
+    <p class="klanten-uitleg">${uitlegTekst}</p>
+    <div class="klantenlijst" id="klantenlijst"></div>
+
+    <div class="akkoord">
+      <input type="checkbox" id="akkoord">
+      <label for="akkoord"><b>Ik snap het</b> — deze klantenlijst gaat naar Otto, zodat hij een opvolger kan zoeken en die de klanten kan overnemen.</label>
+    </div>
+
+    <button class="verstuur" id="verstuur-btn" disabled>Vertrekdocument versturen</button>
+    <div class="fout" id="verstuur-fout" style="display:none"></div>
+    <div class="voettekst">Eggspress · dit document is voor Otto bedoeld, niet openbaar</div>
+  `;
+
+  document.getElementById('redenen').innerHTML = REDENEN.map(r =>
+    `<div class="reden" data-reden="${esc(r)}">${esc(r)}</div>`).join('');
+  document.querySelectorAll('.reden').forEach(el => el.addEventListener('click', () => {
+    gekozenReden = el.dataset.reden;
+    document.querySelectorAll('.reden').forEach(x => x.classList.toggle('gekozen', x === el));
+  }));
+
+  document.getElementById('akkoord').addEventListener('change', bijwerkVerstuurknop);
+  document.getElementById('verstuur-btn').addEventListener('click', versturen);
+
+  renderKlantenlijst();
+}
+
+function renderKlantenlijst(){
+  const el = document.getElementById('klantenlijst');
+  const rijenHtml = klanten.map((k, i) => `
+    <div class="klant" data-i="${i}">
+      <div class="klant-nr">${i + 1}</div>
+      <div class="klant-tekst">
+        <input class="naam" placeholder="Naam (optioneel)" value="${esc(k.naam)}" data-veld="naam" data-i="${i}">
+        <input class="adres${k.adres.trim() ? '' : ' leeg'}" placeholder="Adres" value="${esc(k.adres)}" data-veld="adres" data-i="${i}">
+      </div>
+      <button class="klant-verwijder" data-verwijder="${i}">✕</button>
+      <div class="klant-details">
+        <div class="mini"><label>Aantal</label><input type="number" min="0" placeholder="?" value="${esc(k.aantal)}" data-veld="aantal" data-i="${i}"></div>
+        <div class="mini"><label>Maat</label><select data-veld="maat" data-i="${i}">
+          <option value=""${k.maat===''?' selected':''}></option>
+          <option${k.maat==='M'?' selected':''}>M</option>
+          <option${k.maat==='L'?' selected':''}>L</option>
+          <option${k.maat==='XL'?' selected':''}>XL</option>
+          <option${k.maat==='Bio'?' selected':''}>Bio</option>
+          <option${k.maat==='Gemixed'?' selected':''}>Gemixed</option>
+        </select></div>
+        <div class="mini"><label>Frequentie</label><select data-veld="frequentie" data-i="${i}">
+          <option value=""${k.frequentie===''?' selected':''}></option>
+          <option${k.frequentie==='Wekelijks'?' selected':''}>Wekelijks</option>
+          <option${k.frequentie==='1x per 2 wkn'?' selected':''}>1x per 2 wkn</option>
+        </select></div>
+      </div>
+    </div>
+  `).join('');
+
+  el.innerHTML = (klanten.length ? rijenHtml : '<div class="lege-lijst">Nog geen klanten toegevoegd</div>') + `
+    <div class="klant-toevoegen">
+      <div class="rij1">
+        <div class="veld"><input placeholder="Naam" id="nieuw-naam"><div class="veld-hint">Optioneel</div></div>
+        <div class="veld"><input placeholder="Adres" id="nieuw-adres"><div class="veld-hint">Verplicht</div></div>
+        <button class="toevoegen-btn" id="toevoegen-btn">+</button>
+      </div>
+      <div class="rij2">
+        <div class="mini"><label>Aantal</label><input type="number" min="0" placeholder="bv. 2" id="nieuw-aantal"></div>
+        <div class="mini"><label>Maat</label><select id="nieuw-maat"><option value=""></option><option>M</option><option>L</option><option>XL</option><option>Bio</option><option>Gemixed</option></select></div>
+        <div class="mini"><label>Frequentie</label><select id="nieuw-frequentie"><option value=""></option><option>Wekelijks</option><option>1x per 2 wkn</option></select></div>
+      </div>
+    </div>
+  `;
+
+  el.querySelectorAll('input[data-veld], select[data-veld]').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const i = +e.target.dataset.i;
+      klanten[i][e.target.dataset.veld] = e.target.value;
+      if (e.target.dataset.veld === 'adres') e.target.classList.toggle('leeg', !e.target.value.trim());
+      bijwerkTotalen();
+      bijwerkVerstuurknop();
+    });
+  });
+  el.querySelectorAll('[data-verwijder]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      klanten.splice(+btn.dataset.verwijder, 1);
+      renderKlantenlijst();
+      bijwerkTotalen();
+      bijwerkVerstuurknop();
+    });
+  });
+  document.getElementById('toevoegen-btn').addEventListener('click', () => {
+    const naam = document.getElementById('nieuw-naam').value.trim();
+    const adres = document.getElementById('nieuw-adres').value.trim();
+    const aantal = document.getElementById('nieuw-aantal').value;
+    const maat = document.getElementById('nieuw-maat').value;
+    const frequentie = document.getElementById('nieuw-frequentie').value;
+    if (!adres) { document.getElementById('nieuw-adres').focus(); return; }
+    klanten.push({ naam, adres, telefoon: '', aantal, maat, frequentie });
+    renderKlantenlijst();
+    bijwerkTotalen();
+    bijwerkVerstuurknop();
+  });
+
+  bijwerkTotalen();
+}
+
+function bijwerkTotalen(){
+  const totaalKlanten = klanten.length;
+  const dozenPerWeek = klanten.reduce((som, k) => {
+    const aantal = parseFloat(k.aantal) || 0;
+    return som + (k.frequentie === '1x per 2 wkn' ? aantal / 2 : aantal);
+  }, 0);
+  const zonderAdres = klanten.filter(k => !k.adres.trim()).length;
+  document.getElementById('totalen').innerHTML = `
+    <div class="totaal"><b>${totaalKlanten}</b><span>Klanten</span></div>
+    <div class="totaal"><b>${dozenPerWeek % 1 === 0 ? dozenPerWeek : '≈ ' + Math.round(dozenPerWeek)}</b><span>Dozen/week</span></div>
+    <div class="totaal${zonderAdres ? ' waarschuwing' : ''}"><b>${zonderAdres}</b><span>Zonder adres</span></div>
+  `;
+}
+
+function bijwerkVerstuurknop(){
+  const akkoord = document.getElementById('akkoord')?.checked;
+  const zonderAdres = klanten.some(k => !k.adres.trim());
+  document.getElementById('verstuur-btn').disabled = !akkoord || zonderAdres;
+}
+
+async function versturen(){
+  const btn = document.getElementById('verstuur-btn');
+  const foutEl = document.getElementById('verstuur-fout');
+  foutEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Versturen...';
+  try {
+    const res = await fetch(`${SB_URL}/functions/v1/vertrekdocument-indienen`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${SB_KEY}`, 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token,
+        reden_categorie: gekozenReden,
+        reden_tekst: document.getElementById('toelichting').value.trim() || null,
+        klanten: klanten.filter(k => k.adres.trim()),
+      }),
+    });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.fout || 'Onbekende fout');
+    document.getElementById('kop-titel').textContent = `Bedankt, ${esc(voornaam)}!`;
+    document.getElementById('inhoud').innerHTML = '<div class="klaar"><b>Verstuurd!</b>Otto heeft je antwoorden ontvangen en gaat op zoek naar een opvolger voor je klanten. Bedankt voor je tijd bij Eggspress! 🥚</div>';
+  } catch (e) {
+    foutEl.textContent = e.message;
+    foutEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Vertrekdocument versturen';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
